@@ -2,6 +2,7 @@
 #define BOARD_H
 
 enum square {EMPTY = '.', RED = 'r', YELLOW = 'y'};
+typedef enum square square;
 
 void board_init();
 void board_display();
