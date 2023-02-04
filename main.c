@@ -1,20 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "board.h"
+#include "square.h"
 
-// #define AS_RED
+#define DEPTH 2
+#define PLAYER_COLOUR RED
 
 int main() {
-    board_init();
+    board_init(PLAYER_COLOUR);
     while (1) {
         board_display();
-        #ifdef AS_RED
-            board_accept_input(1);
-            board_bot_move(1);
-        #else
-            board_accept_input(0);
-            board_bot_move(0);
-        #endif
+        board_accept_input(PLAYER_COLOUR);
+        board_bot_move(PLAYER_COLOUR);
     }
     return 0;
 }
