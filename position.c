@@ -22,6 +22,8 @@ char position_square_won(position* pos, int row, int column, int x, int y) {
 }
 
 // finds the lowest empty row in the given column
+// returns zero-indexed row
+// returns -1 if the row is full
 int position_find_lowest_empty_index(position* pos, int column) {
     int row;
     for(row = 0;
@@ -30,21 +32,27 @@ int position_find_lowest_empty_index(position* pos, int column) {
     return row-1;
 }
 
+// returns length of the sequence
+// x and y is the direction
+// row and column is the first square of the sequence
 int get_sequence_length(position* pos, int row, int column, int x, int y) {
     square colour = pos->board[row][column];
     int length;
     square checking_colour = pos->board[row+y][column+x];
     for (length = 1; checking_colour == colour; length++) {
-        if (column + length * x >= WIDTH || row + length * y >= HEIGHT)
-            return length-1;
-        checking_colour = pos->board[row + length*y][column + length*x];
+        int new_col = column + length * x;
+        int new_row = row + length * y;
+        if (new_col >= WIDTH || new_row >= HEIGHT)
+            return length;
+        if (new_col < 0 || new_row < 0)
+            return length;
+        checking_colour = pos->board[new_row][new_col];
     }
     return length;
 }
 
-int position_eval(position* pos) {
+int position_eval(position* pos, square player_to_play) {
     int eval = 0;
-    // looping through all the columns
     for (int column = 0; column < WIDTH; column ++) {
         int row = position_find_lowest_empty_index(pos, column);
         if (row < 0)
@@ -60,13 +68,17 @@ int position_eval(position* pos) {
                 if (column+x >= WIDTH || column+x < 0)
                     continue;
                 square adjacent_colour = pos->board[row+y][column+x];
-                if (adjacent_colour == RED) {
+                if (adjacent_colour != EMPTY) {
                     int length = get_sequence_length(pos, row+y, column+x, x, y);
-                    eval += length * length;
-                }
-                if (adjacent_colour == YELLOW) {
-                    int length = get_sequence_length(pos, row+y, column+x, x, y);
-                    eval -= length * length;
+                    // -1 or 1 depending on what the adjacent colour is
+                    // this is a funky way to do this I know
+                    char coeff = adjacent_colour - 's';
+                    coeff = (coeff < 0) - (coeff > 0);
+                    if (length == 4) {
+                        eval += (INF/1000) * coeff;
+                        continue;
+                    }
+                    eval += length * length * coeff;
                 }
             }
         }
@@ -75,6 +87,7 @@ int position_eval(position* pos) {
 }
 
 // returns the colour which won
+// returns 0 if no one won
 square position_check_who_won(position* pos) {
     for (int i = 0; i < HEIGHT; i++) {
         for (int j = 0; j < WIDTH; j++) {
@@ -97,4 +110,106 @@ square position_check_who_won(position* pos) {
 void position_put_in_column(position* pos, square piece, int column) {
     int row = position_find_lowest_empty_index(pos, column);
     pos->board[row][column] = piece;
+}
+
+// in-depth analysis
+
+// eval_and_column position_minimax(position* pos, int depth, int alpha, int beta, square player_to_play) {
+//     for (int j = 0; j < 2 - depth; j++) printf("\t");
+//     printf("entered depth %d:\n", depth);
+//     if (depth == 0 || position_check_who_won(pos)) {
+//         int eval = position_eval(pos, player_to_play);
+//         for (int j = 0; j < 2 - depth; j++) printf("\t");
+//         printf("returning static eval of %d\n", eval);
+//         return (eval_and_column) {eval, 0};
+//     }
+    
+//     if (player_to_play == RED) {
+//         int maxeval = -INF-1;
+//         int column = 0;
+//         for (int i = 0; i < 7; i++) {
+//             for (int j = 0; j < 2 - depth; j++) printf("\t");
+//             printf("checking column %d\n", i);
+//             position temp = *pos;
+//             position_put_in_column(&temp, player_to_play, i);
+//             int eval = position_minimax(&temp, depth-1, alpha, beta, YELLOW).eval;
+//             if (maxeval < eval) {
+//                 maxeval = eval;
+//                 column = i;
+//             }
+//             maxeval = fmax(maxeval, eval);
+//             alpha = fmax(alpha, eval);
+//             if (beta <= alpha)
+//                 break;
+//         }
+//         for (int j = 0; j < 2 - depth; j++) printf("\t");
+//         printf("returning eval of %d\n", maxeval);
+//         return (eval_and_column) {maxeval, column};
+//     } else {
+//         int mineval = INF+1;
+//         int column = 0;
+//         for (int i = 0; i < 7; i++) {
+//             for (int j = 0; j < 2 - depth; j++) printf("\t");
+//             printf("checking column %d\n", i);
+//             position temp = *pos;
+//             position_put_in_column(&temp, player_to_play, i);
+//             int eval = position_minimax(&temp, depth-1, alpha, beta, RED).eval;
+//             if (mineval > eval) {
+//                 mineval = eval;
+//                 column = i;
+//             }
+//             alpha = fmin(alpha, eval);
+//             if (beta <= alpha)
+//                 break;
+//         }
+//         for (int j = 0; j < 2 - depth; j++) printf("\t");
+//         printf("returning eval of %d\n", mineval);
+//         return (eval_and_column) {mineval, column};
+//     }
+// }
+
+eval_and_column position_minimax(position* pos, int depth, int alpha, int beta, square player_to_play) {
+    if (depth == 0 || position_check_who_won(pos)) {
+        int eval = position_eval(pos, player_to_play);
+        return (eval_and_column) {eval, 0};
+    }
+    
+    if (player_to_play == RED) {
+        int maxeval = -INF-1;
+        int column = 0;
+        for (int i = 0; i < 7; i++) {
+            position temp = *pos;
+            if (position_find_lowest_empty_index(pos, i) == -1)
+                continue;
+            position_put_in_column(&temp, player_to_play, i);
+            int eval = position_minimax(&temp, depth-1, alpha, beta, YELLOW).eval;
+            if (maxeval < eval) {
+                maxeval = eval;
+                column = i;
+            }
+            maxeval = fmax(maxeval, eval);
+            alpha = fmax(alpha, eval);
+            if (beta <= alpha)
+                break;
+        }
+        return (eval_and_column) {maxeval, column};
+    } else {
+        int mineval = INF+1;
+        int column = 0;
+        for (int i = 0; i < 7; i++) {
+            position temp = *pos;
+            if (position_find_lowest_empty_index(pos, i) == -1)
+                continue;
+            position_put_in_column(&temp, player_to_play, i);
+            int eval = position_minimax(&temp, depth-1, alpha, beta, RED).eval;
+            if (mineval > eval) {
+                mineval = eval;
+                column = i;
+            }
+            alpha = fmin(alpha, eval);
+            if (beta <= alpha)
+                break;
+        }
+        return (eval_and_column) {mineval, column};
+    }
 }

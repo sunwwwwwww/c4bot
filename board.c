@@ -4,9 +4,12 @@
 #include "square.h"
 #include "position.h"
 
+#define DEPTH 8
+
 // rows first, columns second
 position current_pos;
 
+// initializes the board (all squares empty)
 void board_init() {
     for (int i = 0; i < HEIGHT; i++) {
         for (int j = 0; j < WIDTH; j++) {
@@ -41,13 +44,12 @@ void board_display() {
     // white
     printf("\033[0;37m");
     printf("1 2 3 4 5 6 7\n");
-    int eval = position_eval(&current_pos);
-    printf("evaluation is: %d\n", eval);
 }
 
 void board_bot_move(square player_colour) {
-    int column = rand()%7;
-    position_put_in_column(&current_pos, square_opposite_colour(player_colour), column);
+    square bot_colour = square_opposite_colour(player_colour);
+    int column = position_minimax(&current_pos, DEPTH, -INF, INF, bot_colour).column;
+    position_put_in_column(&current_pos, bot_colour, column);
     printf("bot played: %d", column+1);
     square winner = position_check_who_won(&current_pos);
     if (!winner)
@@ -62,14 +64,14 @@ void board_bot_move(square player_colour) {
 }
 
 void board_accept_input(square player_colour) {
-    printf("enter your move: ");
+    printf("\nenter your move: ");
 
     // no, this can't be a character
     // don't ask me why idk either
     char move_str[1];
 
     scanf("%s", &move_str);
-    int column = move_str[0] - 49;
+    int column = move_str[0] - '1';
     if (column < 0) {
         printf("that column is filled!\nenter another move:");
         board_accept_input(player_colour);

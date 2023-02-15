@@ -3,7 +3,7 @@
 #include "board.h"
 #include "square.h"
 
-#define PLAYER_COLOUR YELLOW
+#define PLAYER_COLOUR RED
 
 int main() {
     board_init();
