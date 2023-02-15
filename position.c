@@ -74,8 +74,11 @@ int position_eval(position* pos, square player_to_play) {
                     // this is a funky way to do this I know
                     char coeff = adjacent_colour - 's';
                     coeff = (coeff < 0) - (coeff > 0);
-                    if (length == 4) {
-                        eval += (INF/1000) * coeff;
+                    if (length >= 4) {
+                        char x = 1;
+                        if (adjacent_colour == player_to_play)
+                            x = 100;
+                        eval += (INF/1000) * coeff * x;
                         continue;
                     }
                     eval += length * length * coeff;
