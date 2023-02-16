@@ -76,7 +76,7 @@ int position_eval(position* pos, square player_to_play) {
                     coeff = (coeff < 0) - (coeff > 0);
                     if (length >= 4) {
                         char x = 1;
-                        if (adjacent_colour == player_to_play)
+                        if (adjacent_colour != player_to_play)
                             x = 100;
                         eval += (INF/1000) * coeff * x;
                         continue;
