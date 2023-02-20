@@ -69,7 +69,6 @@ void board_accept_input(square player_colour) {
     // no, this can't be a character
     // don't ask me why idk either
     char move_str[1];
-
     scanf("%s", &move_str);
     int column = move_str[0] - '1';
     if (column < 0) {
