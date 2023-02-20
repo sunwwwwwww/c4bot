@@ -74,11 +74,9 @@ int position_eval(position* pos, square player_to_play) {
                     // this is a funky way to do this I know
                     char coeff = adjacent_colour - 's';
                     coeff = (coeff < 0) - (coeff > 0);
-                    if (length >= 4) {
-                        char x = 1;
-                        if (adjacent_colour != player_to_play)
-                            x = 100;
-                        eval += (INF/1000) * coeff * x;
+                    if (length == 3) {
+                        if (adjacent_colour == player_to_play)
+                            eval += (INF/10) * coeff;
                         continue;
                     }
                     eval += length * length * coeff;
@@ -172,8 +170,13 @@ void position_put_in_column(position* pos, square piece, int column) {
 // }
 
 eval_and_column position_minimax(position* pos, int depth, int alpha, int beta, square player_to_play) {
-    if (depth == 0 || position_check_who_won(pos)) {
+    char temp = position_check_who_won(pos);
+    if (depth == 0 || temp) {
         int eval = position_eval(pos, player_to_play);
+        if (temp == 'r')
+            return (eval_and_column) {INF, 0};
+        if (temp == 'y')
+            return (eval_and_column) {-INF, 0};
         return (eval_and_column) {eval, 0};
     }
     
